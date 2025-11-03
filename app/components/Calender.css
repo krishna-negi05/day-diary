@@ -1,0 +1,274 @@
+:root {
+  --dark-body: #0d0d13;
+  --dark-main: rgba(20, 22, 40, 0.6);
+  --dark-second: #79788c;
+  --dark-hover: rgba(60, 60, 90, 0.7);
+  --dark-text: #f8fbff;
+
+  --light-body: #ffffff; /* fixed to pure white */
+  --light-main: rgba(255, 255, 255, 0.9); /* slightly visible glass */
+  --light-second: #d3d3d3;
+  --light-hover: rgba(240, 240, 240, 0.9);
+  --light-text: #1c1c1c;
+
+  --accent: #7dd3fc;
+  --pink: #ff8fab;
+  --purple: #c084fc;
+
+  --shadow: rgba(0, 0, 0, 0.4) 0px 8px 24px;
+  --font-family: "Poppins", sans-serif;
+}
+
+/* themes */
+.dark {
+  --bg-body: var(--dark-body);
+  --bg-main: var(--dark-main);
+  --bg-second: var(--dark-second);
+  --color-hover: var(--dark-hover);
+  --color-txt: var(--dark-text);
+}
+
+.light {
+  --bg-body: var(--light-body);
+  --bg-main: var(--light-main);
+  --bg-second: var(--light-second);
+  --color-hover: var(--light-hover);
+  --color-txt: var(--light-text);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.calendar-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  font-family: var(--font-family);
+  background: radial-gradient(circle at top left, var(--bg-body), #0f0f13);
+  overflow: hidden;
+  position: relative;
+  transition: background 0.5s ease;
+}
+
+/* floating particles */
+.calendar-wrapper::before,
+.calendar-wrapper::after {
+  content: "";
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--purple), transparent 70%);
+  filter: blur(80px);
+  animation: float 10s infinite ease-in-out alternate;
+  opacity: 0.4;
+}
+.calendar-wrapper::after {
+  background: radial-gradient(circle, var(--pink), transparent 70%);
+  left: 70%;
+  animation-delay: 3s;
+}
+
+@keyframes float {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(50px, -50px);
+  }
+}
+
+/* container */
+.calendar {
+  width: max-content;
+  padding: 25px;
+  border-radius: 24px;
+  backdrop-filter: blur(14px);
+  background: var(--bg-main);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  z-index: 1;
+  transition: background 0.5s ease, color 0.5s ease;
+}
+
+/* header */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--color-txt);
+  padding: 10px;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+}
+
+/* body */
+.calendar-body {
+  padding: 10px;
+}
+
+.calendar-week-day {
+  height: 50px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+
+.calendar-week-day div {
+  display: grid;
+  place-items: center;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.calendar-days div {
+  height: 50px;
+  width: 50px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--color-txt);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.calendar-days div:hover {
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  color: white;
+  transform: translateY(-3px);
+  box-shadow: 0 0 12px rgba(125, 211, 252, 0.6);
+}
+
+.calendar-days .curr-date {
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 0 16px rgba(192, 132, 252, 0.5);
+}
+
+/* pickers */
+.month-picker {
+  padding: 5px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.month-picker:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.year-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.year-change {
+  height: 36px;
+  width: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.year-change:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* footer / toggle */
+.calendar-footer {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+.calendar-footer .toggle span {
+  font-size: 0.9rem;
+  margin-right: 10px;
+  transition: color 0.3s;
+  color: var(--color-txt); /* 👈 add this line */
+}
+
+
+.dark-mode-switch {
+  width: 50px;
+  height: 26px;
+  border-radius: 20px;
+  background: var(--bg-second);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.dark-mode-switch-ident {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-main);
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: all 0.3s ease;
+}
+
+/* fixed toggle movement */
+.light .dark-mode-switch-ident {
+  left: 2px;
+}
+.dark .dark-mode-switch-ident {
+  left: calc(100% - 24px);
+}
+
+/* month popup */
+.month-list {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background-color: var(--bg-main);
+  padding: 20px;
+  grid-template-columns: repeat(3, auto);
+  gap: 5px;
+  display: grid;
+  transform: scale(1.5);
+  visibility: hidden;
+  pointer-events: none;
+  border-radius: 24px;
+}
+
+.month-list.show {
+  transform: scale(1);
+  visibility: visible;
+  pointer-events: all;
+  transition: all 0.2s ease-in-out;
+}
+
+.month-list > div > div {
+  width: 100%;
+  padding: 6px 20px;
+  border-radius: 10px;
+  text-align: center;
+  cursor: pointer;
+  color: var(--color-txt);
+  transition: background 0.3s;
+}
+.month-list > div > div:hover {
+  background: linear-gradient(135deg, var(--purple), var(--accent));
+  color: white;
+}

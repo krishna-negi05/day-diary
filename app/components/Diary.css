@@ -1,0 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Merriweather:wght@400;700&display=swap');
+
+.diary-container {
+  min-height: 100vh;
+  width: 100%;
+  padding: 2.5rem 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: "Poppins", sans-serif;
+  transition: background 0.6s ease;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+.diary-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.back-btn {
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #222;
+  cursor: pointer;
+  padding: 0.4rem 0.8rem;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.7);
+  transform: scale(1.05);
+}
+
+.diary-date {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #333;
+  letter-spacing: 0.5px;
+}
+
+.diary-body {
+  width: 100%;
+  max-width: 950px;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 25px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  padding: 2rem 2.5rem;
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
+}
+
+.note-display {
+  text-align: left;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.note-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.note-title {
+  font-family: "Merriweather", serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+}
+
+.mood-emoji-large {
+  font-size: 2.5rem;
+  margin-left: 1rem;
+  user-select: none;
+}
+
+.note-content {
+  font-family: "Poppins", sans-serif;
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #222;
+  white-space: pre-wrap;
+  letter-spacing: 0.4px;
+  margin-top: 0.8rem;
+}
+
+.no-note {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #555;
+  font-style: italic;
+  margin-top: 4rem;
+  opacity: 0.8;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
