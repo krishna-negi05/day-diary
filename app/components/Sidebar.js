@@ -76,14 +76,14 @@ export default function Sidebar() {
         "
       >
         <Image
-          src="/icons/profil.jpg"
+          src="/icons/profile.jpg"
           alt="Profile"
           width={40}
           height={40}
           className="rounded-full drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]"
         />
         <div className="hidden md:block leading-tight">
-          <div className="font-semibold text-gray-100">User</div>
+          <div className="font-semibold text-gray-100">Divyata</div>
           <div className="text-sm text-zinc-400">✨ Staying mindful</div>
         </div>
       </div>

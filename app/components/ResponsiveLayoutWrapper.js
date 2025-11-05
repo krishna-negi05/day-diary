@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Sidebar from "./Sidebar";
 import { Menu } from "lucide-react";
 
 export default function ResponsiveLayoutWrapper({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const sidebarRef = useRef(null);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -15,16 +16,31 @@ export default function ResponsiveLayoutWrapper({ children }) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // ✅ Automatically close sidebar when clicking a link inside it
+  useEffect(() => {
+    if (!isSidebarOpen) return;
+
+    const handleLinkClick = (event) => {
+      const target = event.target.closest("a");
+      if (target && sidebarRef.current?.contains(target)) {
+        setTimeout(() => setIsSidebarOpen(false), 150); // smooth transition
+      }
+    };
+
+    document.addEventListener("click", handleLinkClick);
+    return () => document.removeEventListener("click", handleLinkClick);
+  }, [isSidebarOpen]);
+
   return (
     <>
-      {/* ✅ Sidebar Wrapper (Transparent, no gradient) */}
+      {/* ✅ Sidebar Wrapper */}
       <div
+        ref={sidebarRef}
         className={`fixed top-0 left-0 h-screen w-64 z-50 transform transition-transform duration-300 ease-in-out 
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} 
           md:translate-x-0`}
       >
-        {/* Sidebar itself handles its background styling */}
-        <Sidebar closeSidebar={() => setIsSidebarOpen(false)} />
+        <Sidebar />
       </div>
 
       {/* ✅ Mobile Overlay */}

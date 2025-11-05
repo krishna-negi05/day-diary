@@ -15,22 +15,19 @@ datasource db {
 
 model Entry {
   id        Int      @id @default(autoincrement())
-  date      String   @unique      // e.g., "2025-11-04"
+  date      String   @unique // e.g., "2025-11-04"
   title     String
   mood      String?
   content   String?
-  files     Json?                 // store uploaded files as base64 data or URLs
+  files     Json? // store uploaded files as base64 data or URLs
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model GalleryMedia {
-  id        Int      @id @default(autoincrement())
-  name      String
-  type      String
-  url       String
-  addedAt   DateTime @default(now())
+  id      Int      @id @default(autoincrement())
+  name    String
+  type    String
+  url     String
+  addedAt DateTime @default(now())
 }
-
-
-

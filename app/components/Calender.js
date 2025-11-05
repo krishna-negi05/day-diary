@@ -107,9 +107,6 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Loading / Error States */}
-      {loading && <p className="status">Loading diary entries...</p>}
-      {error && <p className="status error">{error}</p>}
 
       {/* Calendar Body */}
       <div className="calendar-body">

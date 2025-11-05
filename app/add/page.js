@@ -3,11 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
-// import { db, storage } from "@/firebase";
-// import { doc, setDoc, getDoc } from "firebase/firestore";
-// import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import toast from "react-hot-toast"; // ✅ Added toast
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
@@ -23,15 +19,16 @@ export default function AddEntry() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // 🔹 Load entry from Firestore instead of localStorage
+  // ✅ Load entry from Prisma API
   useEffect(() => {
     async function fetchEntry() {
       if (!selectedDate) return;
       try {
-        const docRef = doc(db, "diaryEntries", selectedDate);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
+        const res = await fetch(`/api/entries?date=${selectedDate}`);
+        if (!res.ok) throw new Error("Failed to fetch entry");
+
+        const data = await res.json();
+        if (data) {
           setExistingEntry(data);
           setTitle(data.title || "");
           setMood(data.mood || "");
@@ -44,13 +41,14 @@ export default function AddEntry() {
           setContent("");
           setFiles([]);
         }
-      } catch (err) {
-        console.error("Error fetching entry:", err);
+      } catch {
+        toast.error("❌ Failed to fetch entry");
       }
     }
     fetchEntry();
   }, [selectedDate]);
 
+  // ✅ Handle file uploads (locally store base64 for now)
   const handleFileUpload = (e) => {
     const uploadedFiles = Array.from(e.target.files);
     const filePreviews = [];
@@ -71,44 +69,40 @@ export default function AddEntry() {
     });
   };
 
-  // 🔹 Save entry to Firestore + upload files to Storage
+  // ✅ Save entry to Prisma through API — only toast modified
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!selectedDate) return alert("Please select a date first!");
+    if (!selectedDate) return toast.error("Please select a date first!");
+
     try {
       setLoading(true);
 
-      // Upload files to Firebase Storage
-      const uploadedFiles = await Promise.all(
-        files.map(async (file) => {
-          if (file.url) return file; // already uploaded before
-          const fileRef = ref(storage, `entries/${selectedDate}/${file.name}`);
-          const blob = await fetch(file.data).then((res) => res.blob());
-          await uploadBytes(fileRef, blob);
-          const url = await getDownloadURL(fileRef);
-          return { name: file.name, type: file.type, url };
-        })
-      );
-
-      // Save entry to Firestore
-      await setDoc(doc(db, "diaryEntries", selectedDate), {
+      const payload = {
+        date: selectedDate,
         title,
         mood,
         content,
-        files: uploadedFiles,
-        lastUpdated: new Date().toISOString(),
+        files,
+      };
+
+      const res = await fetch("/api/entries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
-      alert("✅ Entry saved successfully!");
+      if (!res.ok) throw new Error("Failed to save entry");
+
+      toast.success("✅ Entry saved successfully!");
       router.push("/");
-    } catch (err) {
-      console.error("Error saving entry:", err);
-      alert("❌ Failed to save entry.");
+    } catch {
+      toast.error("❌ Failed to save entry.");
     } finally {
       setLoading(false);
     }
   };
 
+  // ✅ Reset form when mode changes
   const resetForm = () => {
     if (existingEntry && mode === "edit") {
       setTitle(existingEntry.title || "");
@@ -167,6 +161,7 @@ export default function AddEntry() {
           />
         </div>
 
+        {/* Mode selection */}
         {selectedDate && !mode && (
           <>
             {existingEntry ? (
@@ -245,7 +240,7 @@ export default function AddEntry() {
               </select>
             </div>
 
-            {/* Content + Emoji */}
+            {/* Content */}
             <div className="mb-6 relative">
               <label className="block text-zinc-700 dark:text-zinc-300 mb-2">Your Thoughts</label>
               <div className="relative">
@@ -271,7 +266,7 @@ export default function AddEntry() {
               )}
             </div>
 
-            {/* File Upload */}
+            {/* Files */}
             <div className="mb-6">
               <label className="block text-zinc-700 dark:text-zinc-300 mb-2">Add Files</label>
               <input
@@ -281,7 +276,6 @@ export default function AddEntry() {
                 className="block w-full text-sm text-zinc-600 dark:text-zinc-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-zinc-200 dark:file:bg-zinc-800 file:text-zinc-700 dark:file:text-zinc-200 hover:file:bg-zinc-300 dark:hover:file:bg-zinc-700"
               />
 
-              {/* Previews */}
               <div className="mt-4 flex flex-wrap gap-4">
                 {files.map((file, index) => (
                   <div
