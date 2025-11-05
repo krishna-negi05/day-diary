@@ -1,14 +1,8 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import "../components/Calender.css";
 import Diary from "../components/Diary";
-
-// 🧠 Firebase imports
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
-
-// import { db } from "@/firebase";
-// import { collection, getDocs } from "firebase/firestore";
 
 export default function Calendar() {
   const monthNames = [
@@ -16,43 +10,50 @@ export default function Calendar() {
     "July", "August", "September", "October", "November", "December"
   ];
 
-  const [selectedDateForDiary, setSelectedDateForDiary] = useState(null);
   const [entries, setEntries] = useState({});
+  const [selectedDateForDiary, setSelectedDateForDiary] = useState(null);
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth());
+  const [days, setDays] = useState([]);
   const [darkMode, setDarkMode] = useState(false);
   const [showMonths, setShowMonths] = useState(false);
-  const [days, setDays] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // ✅ Fetch entries from Firestore instead of localStorage
+  const currentDate = new Date();
+
+  // ✅ Fetch entries from Prisma API
   useEffect(() => {
-  const fetchEntries = async () => {
-    try {
-      const response = await fetch("/api/entries");
-      if (!response.ok) throw new Error("Failed to fetch entries");
+    const fetchEntries = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/entries");
+        if (!response.ok) throw new Error("Failed to fetch entries");
+        const data = await response.json();
+        setEntries(data);
+      } catch (err) {
+        console.error("❌ Error fetching entries:", err);
+        setError("Failed to load diary entries.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      const data = await response.json();
-      setEntries(data);
-      console.log("✅ Prisma entries loaded:", data);
-    } catch (error) {
-      console.error("❌ Error fetching diary entries:", error);
-    }
-  };
+    fetchEntries();
+  }, []);
 
-  fetchEntries();
-}, []);
-
-
-  // ✅ Generate days for selected month/year
+  // ✅ Leap year + February helper
   const isLeapYear = (year) =>
     (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
   const getFebDays = (year) => (isLeapYear(year) ? 29 : 28);
 
+  // ✅ Generate days grid for selected month/year
   useEffect(() => {
     const daysInMonth = [
       31, getFebDays(year), 31, 30, 31, 30,
       31, 31, 30, 31, 30, 31
     ];
+
     const firstDay = new Date(year, month, 1);
     const totalDays = daysInMonth[month] + firstDay.getDay();
 
@@ -60,19 +61,18 @@ export default function Calendar() {
     for (let i = 0; i < totalDays; i++) {
       newDays.push(i >= firstDay.getDay() ? i - firstDay.getDay() + 1 : "");
     }
+
     setDays(newDays);
   }, [month, year]);
 
-  const currentDate = new Date();
-
-  // ✅ Handle date click (store as YYYY-MM-DD)
+  // ✅ Handle date click
   const handleDateClick = (day) => {
     if (!day) return;
     const formattedDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     setSelectedDateForDiary(formattedDate);
   };
 
-  // ✅ Show diary view if a date is selected
+  // ✅ Show diary page when date selected
   if (selectedDateForDiary) {
     const entry = entries[selectedDateForDiary];
     return (
@@ -95,6 +95,7 @@ export default function Calendar() {
         >
           {monthNames[month]}
         </span>
+
         <div className="year-picker">
           <span className="year-change" onClick={() => setYear(year - 1)}>
             &lt;
@@ -106,10 +107,14 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Body */}
+      {/* Loading / Error States */}
+      {loading && <p className="status">Loading diary entries...</p>}
+      {error && <p className="status error">{error}</p>}
+
+      {/* Calendar Body */}
       <div className="calendar-body">
         <div className="calendar-week-day">
-          {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
             <div key={d}>{d}</div>
           ))}
         </div>
@@ -171,3 +176,4 @@ export default function Calendar() {
     </div>
   );
 }
+1

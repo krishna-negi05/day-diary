@@ -5,8 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -14,7 +13,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model DiaryEntry {
+model Entry {
   id        Int      @id @default(autoincrement())
   date      String   @unique      // e.g., "2025-11-04"
   title     String
@@ -24,5 +23,14 @@ model DiaryEntry {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model GalleryMedia {
+  id        Int      @id @default(autoincrement())
+  name      String
+  type      String
+  url       String
+  addedAt   DateTime @default(now())
+}
+
 
 
