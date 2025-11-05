@@ -1,8 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { db } from "@/firebase"; // ✅ Make sure your firebase.js exports db
-import { doc, getDoc } from "firebase/firestore";
 import "../components/Diary.css";
 
 export default function Diary({ selectedDate, onBack }) {
@@ -10,17 +8,17 @@ export default function Diary({ selectedDate, onBack }) {
   const [bgGradient, setBgGradient] = useState("linear-gradient(135deg, #ece9e6, #ffffff)");
   const [fullscreenMedia, setFullscreenMedia] = useState(null);
 
-  // ✅ Load from Firestore instead of localStorage
+  // ✅ Load from Prisma API
   useEffect(() => {
     if (!selectedDate) return;
 
     const fetchEntry = async () => {
       try {
-        const ref = doc(db, "diaryEntries", selectedDate);
-        const snap = await getDoc(ref);
-        if (snap.exists()) {
-          setEntry(snap.data());
-          setMoodBackground(snap.data().mood);
+        const res = await fetch(`/api/entries?date=${selectedDate}`);
+        const data = await res.json();
+        if (data) {
+          setEntry(data);
+          setMoodBackground(data.mood);
         } else {
           setEntry(null);
           setMoodBackground(null);
@@ -61,7 +59,7 @@ export default function Diary({ selectedDate, onBack }) {
     }
   };
 
-  // 🎨 Render file previews (Firebase URLs)
+  // 🎨 File Preview
   const renderFilePreview = (file) => {
     if (!file) return null;
     const isImage = file.type?.startsWith("image/");
@@ -114,9 +112,7 @@ export default function Diary({ selectedDate, onBack }) {
         transition={{ duration: 0.4 }}
       >
         <div className="diary-header">
-          <button className="back-btn" onClick={onBack}>
-            ← Back
-          </button>
+          <button className="back-btn" onClick={onBack}>← Back</button>
           <h2 className="diary-date">{selectedDate}</h2>
         </div>
 
@@ -137,7 +133,6 @@ export default function Diary({ selectedDate, onBack }) {
                 {entry.content || "No content written."}
               </p>
 
-              {/* 🌟 Attached Files */}
               {entry.files && entry.files.length > 0 && (
                 <div className="mt-9">
                   <h4 className="font-roboto text-zinc-900 dark:text-zinc-900 text-md mb-3">

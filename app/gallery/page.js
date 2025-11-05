@@ -1,20 +1,6 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { db, storage } from "../firebase";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  deleteDoc,
-  doc,
-} from "firebase/firestore";
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL,
-  deleteObject,
-} from "firebase/storage";
 
 export default function Gallery() {
   const [media, setMedia] = useState([]);
@@ -22,71 +8,57 @@ export default function Gallery() {
   const [menu, setMenu] = useState({ visible: false, x: 0, y: 0, index: null });
   const longPressTimer = useRef(null);
 
-  // 🧠 Load from Firestore
+  // ✅ Load from Prisma API
   useEffect(() => {
     const fetchMedia = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "galleryMedia"));
-        const data = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        const res = await fetch("/api/gallery");
+        const data = await res.json();
         setMedia(data);
-        console.log("✅ Loaded from Firestore:", data);
       } catch (err) {
         console.error("❌ Error fetching media:", err);
       }
     };
-
     fetchMedia();
   }, []);
 
-  // 📤 Upload to Firebase Storage
+  // ✅ Upload file — simulate file upload (you can later connect S3/Cloudinary)
   const handleAddMedia = async (e) => {
     const files = Array.from(e.target.files);
+
     for (const file of files) {
-      const storageRef = ref(storage, `gallery/${Date.now()}_${file.name}`);
+      // In a real app, upload file to S3 or Cloudinary first.
+      const fakeUrl = URL.createObjectURL(file);
+
+      const newMedia = {
+        name: file.name,
+        type: file.type,
+        url: fakeUrl,
+      };
 
       try {
-        // Upload file
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
+        const res = await fetch("/api/gallery", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newMedia),
+        });
 
-        // Save metadata to Firestore
-        const newMedia = {
-          name: file.name,
-          type: file.type,
-          url,
-          addedAt: new Date().toISOString(),
-        };
-
-        const docRef = await addDoc(collection(db, "galleryMedia"), newMedia);
-
-        // Update UI
-        setMedia((prev) => [...prev, { id: docRef.id, ...newMedia }]);
-        console.log("✅ Uploaded:", newMedia);
+        const saved = await res.json();
+        setMedia((prev) => [...prev, saved]);
       } catch (err) {
         console.error("❌ Upload failed:", err);
       }
     }
   };
 
-  // 🗑 Delete media from Firebase
+  // ✅ Delete from Prisma
   const handleDelete = async (index) => {
     const target = media[index];
     if (!target) return;
 
     try {
-      // Delete from Storage
-      const fileRef = ref(storage, target.url);
-      await deleteObject(fileRef).catch(() => console.warn("File not found in storage"));
-
-      // Delete from Firestore
-      await deleteDoc(doc(db, "galleryMedia", target.id));
-
-      // Update local state
+      await fetch(`/api/gallery/${target.id}`, { method: "DELETE" });
       setMedia((prev) => prev.filter((_, i) => i !== index));
-      console.log("🗑 Deleted:", target.name);
     } catch (err) {
       console.error("❌ Error deleting media:", err);
     }
@@ -94,7 +66,7 @@ export default function Gallery() {
     setMenu({ visible: false, x: 0, y: 0, index: null });
   };
 
-  // 📱 Long press for mobile
+  // 🖱 Context Menu & Long Press
   const startLongPress = (e, idx) => {
     longPressTimer.current = setTimeout(() => {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -106,10 +78,8 @@ export default function Gallery() {
       });
     }, 600);
   };
-
   const endLongPress = () => clearTimeout(longPressTimer.current);
 
-  // 🖱 Right-click menu
   const handleContextMenu = (e, idx) => {
     e.preventDefault();
     const rect = e.currentTarget.getBoundingClientRect();
@@ -123,8 +93,7 @@ export default function Gallery() {
 
   // Close menu on outside click
   useEffect(() => {
-    const handleClickOutside = () =>
-      setMenu({ visible: false, x: 0, y: 0, index: null });
+    const handleClickOutside = () => setMenu({ visible: false, x: 0, y: 0, index: null });
     window.addEventListener("click", handleClickOutside);
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
