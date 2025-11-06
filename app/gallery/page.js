@@ -22,85 +22,125 @@ export default function Gallery() {
     fetchMedia();
   }, []);
 
-  // ✅ Upload file to Cloudinary
+  // ✅ Upload file with progress tracking
   const handleAddMedia = async (e) => {
     const files = Array.from(e.target.files);
-    for (const file of files) {
+
+    files.forEach(async (file) => {
+      const tempId = `${file.name}-${Date.now()}`;
+      setMedia((prev) => [
+        ...prev,
+        { id: tempId, name: file.name, type: file.type, progress: 0, uploading: true },
+      ]);
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
+
       try {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
+        await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open(
+            "POST",
+            `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`
+          );
 
-        const uploadRes = await fetch(
-          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`,
-          { method: "POST", body: formData }
-        );
+          xhr.upload.addEventListener("progress", (event) => {
+            if (event.lengthComputable) {
+              const percent = Math.round((event.loaded / event.total) * 100);
+              setMedia((prev) =>
+                prev.map((m) =>
+                  m.id === tempId ? { ...m, progress: percent } : m
+                )
+              );
+            }
+          });
 
-        const uploadData = await uploadRes.json();
-        if (!uploadData.secure_url) throw new Error("Upload failed");
+          xhr.onload = async () => {
+            if (xhr.status === 200) {
+              const uploadData = JSON.parse(xhr.responseText);
+              const res = await fetch("/api/gallery", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  name: file.name,
+                  type: file.type,
+                  url: uploadData.secure_url,
+                }),
+              });
+              const saved = await res.json();
+              setMedia((prev) =>
+                prev.map((m) =>
+                  m.id === tempId
+                    ? { ...saved, uploading: false, progress: 100 }
+                    : m
+                )
+              );
+              resolve();
+            } else reject(new Error("Upload failed"));
+          };
 
-        const newMedia = {
-          name: file.name,
-          type: file.type,
-          url: uploadData.secure_url,
-        };
-
-        const res = await fetch("/api/gallery", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newMedia),
+          xhr.onerror = () => reject(new Error("Network error"));
+          xhr.send(formData);
         });
-
-        const saved = await res.json();
-        setMedia((prev) => [...prev, saved]);
       } catch (err) {
         console.error("❌ Upload failed:", err);
+        setMedia((prev) =>
+          prev.map((m) =>
+            m.id === tempId ? { ...m, failed: true, uploading: false } : m
+          )
+        );
       }
-    }
+    });
   };
 
   // ✅ Delete from Prisma
   const handleDelete = async (index) => {
-  const target = media[index];
+    const target = media[index];
+    if (!target || !target.id) return;
 
-  if (!target || !target.id) {
-    console.error("❌ No valid ID found for:", target);
-    return;
-  }
-
-  try {
-    console.log("🗑 Deleting ID:", target.id);
-
-    const res = await fetch(`/api/gallery/${target.id}`, { method: "DELETE" });
-    const result = await res.json();
-
-    if (!res.ok) {
-      console.error("❌ Failed to delete media:", result.error || res.statusText);
-      return;
+    try {
+      const res = await fetch(`/api/gallery/${target.id}`, { method: "DELETE" });
+      if (res.ok) {
+        setMedia((prev) => prev.filter((_, i) => i !== index));
+      } else {
+        console.error("❌ Failed to delete:", res.statusText);
+      }
+    } catch (err) {
+      console.error("❌ Error deleting media:", err);
     }
+    setMenu({ visible: false, x: 0, y: 0, index: null });
+  };
 
-    // ✅ Remove from state only after successful deletion
-    setMedia((prev) => prev.filter((_, i) => i !== index));
-    console.log("✅ Media deleted successfully");
-  } catch (err) {
-    console.error("❌ Error deleting media:", err);
-  }
+  // 🖱 Context Menu & Long Press (with haptic feedback)
+  const startLongPress = (e, idx) => {
+  const target = e.currentTarget;
+
+  longPressTimer.current = setTimeout(() => {
+    // Ensure the target still exists in DOM
+    if (!target) return;
+
+    // Haptic feedback
+    if (navigator.vibrate) navigator.vibrate(50);
+
+    // Safely get the element position
+    const rect = target.getBoundingClientRect();
+    setMenu({
+      visible: true,
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+      index: idx,
+    });
+  }, 600);
 };
 
-
-  // 🖱 Context Menu & Long Press
-  const startLongPress = (e, idx) => {
-    longPressTimer.current = setTimeout(() => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      setMenu({
-        visible: true,
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2,
-        index: idx,
-      });
-    }, 600);
-  };
-  const endLongPress = () => clearTimeout(longPressTimer.current);
+const endLongPress = () => {
+  // Cancel long press safely
+  if (longPressTimer.current) {
+    clearTimeout(longPressTimer.current);
+    longPressTimer.current = null;
+  }
+};
 
   const handleContextMenu = (e, idx) => {
     e.preventDefault();
@@ -111,6 +151,11 @@ export default function Gallery() {
       y: rect.top + rect.height / 2,
       index: idx,
     });
+
+    // Optional: haptic feedback on desktop touchpads that support it (Safari / Chrome)
+    if (navigator.vibrate) {
+      navigator.vibrate(30);
+    }
   };
 
   // Close menu on outside click
@@ -152,18 +197,42 @@ export default function Gallery() {
               onTouchStart={(e) => startLongPress(e, idx)}
               onTouchEnd={endLongPress}
             >
-              {file.type.startsWith("image/") ? (
+              {file.type?.startsWith("image/") ? (
                 <img
                   src={file.url}
                   alt={file.name}
-                  className="object-cover w-full h-60 transition-all duration-300 hover:brightness-75"
+                  className={`object-cover w-full h-60 transition-all duration-300 ${
+                    file.uploading ? "opacity-70" : ""
+                  }`}
                 />
               ) : (
                 <video
                   src={file.url}
-                  className="object-cover w-full h-60 transition-all duration-300 hover:brightness-75"
+                  className={`object-cover w-full h-60 transition-all duration-300 ${
+                    file.uploading ? "opacity-70" : ""
+                  }`}
                   muted
                 />
+              )}
+
+              {/* ✅ Upload Progress Bar */}
+              {file.uploading && (
+                <div className="absolute bottom-0 left-0 w-full h-2 bg-gray-700">
+                  <div
+                    className="h-2 bg-green-500 transition-all duration-300"
+                    style={{ width: `${file.progress}%` }}
+                  ></div>
+                  <span className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-white">
+                    {file.progress}%
+                  </span>
+                </div>
+              )}
+
+              {/* ❌ Failed Upload */}
+              {file.failed && (
+                <div className="absolute bottom-0 left-0 w-full bg-red-600 text-xs text-center text-white py-1">
+                  ❌ Upload Failed
+                </div>
               )}
             </motion.div>
           ))}
