@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
-import toast from "react-hot-toast"; // ✅ Added toast
+import toast from "react-hot-toast";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
@@ -26,7 +26,6 @@ export default function AddEntry() {
       try {
         const res = await fetch(`/api/entries?date=${selectedDate}`);
         if (!res.ok) throw new Error("Failed to fetch entry");
-
         const data = await res.json();
         if (data) {
           setExistingEntry(data);
@@ -48,41 +47,95 @@ export default function AddEntry() {
     fetchEntry();
   }, [selectedDate]);
 
-  // ✅ Handle file uploads (locally store base64 for now)
-  const handleFileUpload = (e) => {
+  // ✅ Upload files directly to Cloudinary with progress tracking
+  const handleFileUpload = async (e) => {
     const uploadedFiles = Array.from(e.target.files);
-    const filePreviews = [];
 
-    uploadedFiles.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        filePreviews.push({
-          name: file.name,
-          type: file.type,
-          data: event.target.result,
-        });
-        if (filePreviews.length === uploadedFiles.length) {
-          setFiles((prev) => [...prev, ...filePreviews]);
+    // parallel uploads to make faster
+    await Promise.all(
+      uploadedFiles.map(async (file) => {
+        try {
+          // Add a placeholder for progress
+          setFiles((prev) => [
+            ...prev,
+            { name: file.name, type: file.type, progress: 0, uploading: true },
+          ]);
+
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
+
+          await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open(
+              "POST",
+              `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`
+            );
+
+            xhr.upload.addEventListener("progress", (event) => {
+              if (event.lengthComputable) {
+                const percent = Math.round((event.loaded / event.total) * 100);
+                setFiles((prev) =>
+                  prev.map((f) =>
+                    f.name === file.name ? { ...f, progress: percent } : f
+                  )
+                );
+              }
+            });
+
+            xhr.onload = () => {
+              if (xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                setFiles((prev) =>
+                  prev.map((f) =>
+                    f.name === file.name
+                      ? {
+                          ...f,
+                          url: data.secure_url,
+                          uploading: false,
+                          progress: 100,
+                        }
+                      : f
+                  )
+                );
+                resolve();
+              } else reject(new Error("Cloudinary upload failed"));
+            };
+
+            xhr.onerror = () => reject(new Error("Upload error"));
+            xhr.send(formData);
+          });
+        } catch (err) {
+          console.error("❌ Upload error:", err);
+          toast.error(`Failed to upload ${file.name}`);
+          // mark as failed
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.name === file.name ? { ...f, uploading: false, progress: 0, failed: true } : f
+            )
+          );
         }
-      };
-      reader.readAsDataURL(file);
-    });
+      })
+    );
+
+    toast.success("✅ Files uploaded successfully!");
   };
 
-  // ✅ Save entry to Prisma through API — only toast modified
+  // ✅ Save entry to Prisma through API
   const handleSave = async (e) => {
     e.preventDefault();
     if (!selectedDate) return toast.error("Please select a date first!");
+    if (files.some((f) => f.uploading))
+      return toast.error("Please wait for all uploads to finish!");
 
     try {
       setLoading(true);
-
       const payload = {
         date: selectedDate,
         title,
         mood,
         content,
-        files,
+        files: files.filter((f) => f.url), // only include completed uploads
       };
 
       const res = await fetch("/api/entries", {
@@ -292,25 +345,46 @@ export default function AddEntry() {
                     </button>
 
                     {file.type.startsWith("image/") ? (
-                      <img src={file.url || file.data} alt={file.name} className="w-full h-full object-cover" />
+                      <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
                     ) : file.type.startsWith("video/") ? (
-                      <video src={file.url || file.data} controls className="w-full h-full object-cover" />
+                      <video src={file.url} controls className="w-full h-full object-cover" />
                     ) : (
                       <p className="text-xs text-center text-zinc-500 p-2 truncate">{file.name}</p>
+                    )}
+
+                    {/* ✅ Progress Overlay */}
+                    {file.uploading && (
+                      <div className="absolute bottom-0 left-0 w-full bg-black/60 text-xs text-center text-white py-1">
+                        Uploading {file.progress || 0}%
+                      </div>
+                    )}
+                    {file.failed && (
+                      <div className="absolute bottom-0 left-0 w-full bg-red-600 text-xs text-center text-white py-1">
+                        ❌ Upload failed
+                      </div>
                     )}
                   </div>
                 ))}
               </div>
             </div>
 
+            {/* Save Button */}
             <div className="flex justify-center">
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 type="submit"
-                disabled={loading}
-                className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#2b2b31] to-[#1c1c20] text-white font-semibold tracking-wide hover:scale-[1.03] transition-all duration-200"
+                disabled={loading || files.some((f) => f.uploading)}
+                className={`px-8 py-3 rounded-xl font-semibold tracking-wide transition-all duration-200 ${
+                  loading || files.some((f) => f.uploading)
+                    ? "bg-gray-500 cursor-not-allowed"
+                    : "bg-gradient-to-r from-[#2b2b31] to-[#1c1c20] text-white hover:scale-[1.03]"
+                }`}
               >
-                {loading ? "Saving..." : "Save Entry"}
+                {loading
+                  ? "Saving..."
+                  : files.some((f) => f.uploading)
+                  ? "Uploading files..."
+                  : "Save Entry"}
               </motion.button>
             </div>
           </motion.form>

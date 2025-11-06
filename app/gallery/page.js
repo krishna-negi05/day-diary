@@ -22,21 +22,29 @@ export default function Gallery() {
     fetchMedia();
   }, []);
 
-  // ✅ Upload file — simulate file upload (you can later connect S3/Cloudinary)
+  // ✅ Upload file to Cloudinary
   const handleAddMedia = async (e) => {
     const files = Array.from(e.target.files);
-
     for (const file of files) {
-      // In a real app, upload file to S3 or Cloudinary first.
-      const fakeUrl = URL.createObjectURL(file);
-
-      const newMedia = {
-        name: file.name,
-        type: file.type,
-        url: fakeUrl,
-      };
-
       try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
+
+        const uploadRes = await fetch(
+          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`,
+          { method: "POST", body: formData }
+        );
+
+        const uploadData = await uploadRes.json();
+        if (!uploadData.secure_url) throw new Error("Upload failed");
+
+        const newMedia = {
+          name: file.name,
+          type: file.type,
+          url: uploadData.secure_url,
+        };
+
         const res = await fetch("/api/gallery", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -53,18 +61,32 @@ export default function Gallery() {
 
   // ✅ Delete from Prisma
   const handleDelete = async (index) => {
-    const target = media[index];
-    if (!target) return;
+  const target = media[index];
 
-    try {
-      await fetch(`/api/gallery/${target.id}`, { method: "DELETE" });
-      setMedia((prev) => prev.filter((_, i) => i !== index));
-    } catch (err) {
-      console.error("❌ Error deleting media:", err);
+  if (!target || !target.id) {
+    console.error("❌ No valid ID found for:", target);
+    return;
+  }
+
+  try {
+    console.log("🗑 Deleting ID:", target.id);
+
+    const res = await fetch(`/api/gallery/${target.id}`, { method: "DELETE" });
+    const result = await res.json();
+
+    if (!res.ok) {
+      console.error("❌ Failed to delete media:", result.error || res.statusText);
+      return;
     }
 
-    setMenu({ visible: false, x: 0, y: 0, index: null });
-  };
+    // ✅ Remove from state only after successful deletion
+    setMedia((prev) => prev.filter((_, i) => i !== index));
+    console.log("✅ Media deleted successfully");
+  } catch (err) {
+    console.error("❌ Error deleting media:", err);
+  }
+};
+
 
   // 🖱 Context Menu & Long Press
   const startLongPress = (e, idx) => {
@@ -102,7 +124,6 @@ export default function Gallery() {
     <div className="min-h-screen p-8 bg-gradient-to-br from-[#0a0a0a] to-[#1a1a1a] text-white relative">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">📸 My Gallery</h1>
-
         <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg font-medium transition-all">
           ➕ Add Media
           <input
@@ -149,7 +170,7 @@ export default function Gallery() {
         </div>
       )}
 
-      {/* 🧭 Context Menu */}
+      {/* Context Menu */}
       <AnimatePresence>
         {menu.visible && (
           <motion.div
@@ -182,7 +203,7 @@ export default function Gallery() {
         )}
       </AnimatePresence>
 
-      {/* 🌌 Fullscreen viewer */}
+      {/* Fullscreen Viewer */}
       <AnimatePresence>
         {selectedMedia && (
           <motion.div

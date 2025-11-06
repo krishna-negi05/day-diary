@@ -13,20 +13,32 @@ export default function Diary({ selectedDate, onBack }) {
     if (!selectedDate) return;
 
     const fetchEntry = async () => {
-      try {
-        const res = await fetch(`/api/entries?date=${selectedDate}`);
-        const data = await res.json();
-        if (data) {
-          setEntry(data);
-          setMoodBackground(data.mood);
-        } else {
-          setEntry(null);
-          setMoodBackground(null);
-        }
-      } catch (err) {
-        console.error("Error fetching diary entry:", err);
+  try {
+    const res = await fetch(`/api/entries?date=${selectedDate}`);
+    const data = await res.json();
+    if (data) {
+      // Normalize files before setting state
+      if (data.files) {
+        data.files = data.files.map((f) => {
+          if (typeof f === "string") {
+            const name = f.split("/").pop();
+            const ext = name.split(".").pop();
+            const type = ext === "mp4" ? "video/mp4" : `image/${ext}`;
+            return { url: f, name, type };
+          }
+          return f;
+        });
       }
-    };
+      setEntry(data);
+      setMoodBackground(data.mood);
+    } else {
+      setEntry(null);
+      setMoodBackground(null);
+    }
+  } catch (err) {
+    console.error("Error fetching diary entry:", err);
+  }
+};
 
     fetchEntry();
   }, [selectedDate]);
