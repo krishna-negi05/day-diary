@@ -25,9 +25,12 @@ model Entry {
 }
 
 model GalleryMedia {
-  id      Int      @id @default(autoincrement())
-  name    String
-  type    String
-  url     String
-  addedAt DateTime @default(now())
+  id       Int      @id @default(autoincrement())
+  name     String
+  type     String
+  url      String
+  addedAt  DateTime @default(now())
+  favorite Boolean  @default(false) // ✅ Add this line
 }
+
+

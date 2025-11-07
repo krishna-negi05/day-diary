@@ -1,41 +1,72 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Star } from "lucide-react";
 
 export default function Gallery() {
   const [media, setMedia] = useState([]);
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [menu, setMenu] = useState({ visible: false, x: 0, y: 0, index: null });
+  const [loading, setLoading] = useState(true);
   const longPressTimer = useRef(null);
 
-  // ✅ Load from Prisma API
+  // ✅ Fetch from API
   useEffect(() => {
-    const fetchMedia = async () => {
+    async function fetchMedia() {
       try {
         const res = await fetch("/api/gallery");
         const data = await res.json();
-        setMedia(data);
+
+        const mediaArray = Array.isArray(data)
+          ? data
+          : Array.isArray(data.media)
+          ? data.media
+          : [];
+
+        const normalized = mediaArray.map((item) => ({
+          ...item,
+          favorite: item.favorite === true || item.favorite === "true",
+        }));
+
+        const sorted = normalized.sort((a, b) =>
+          a.favorite === b.favorite ? 0 : a.favorite ? -1 : 1
+        );
+
+        setMedia(sorted);
       } catch (err) {
-        console.error("❌ Error fetching media:", err);
+        console.error("❌ Error fetching gallery:", err);
+      } finally {
+        setLoading(false);
       }
-    };
+    }
+
     fetchMedia();
   }, []);
 
-  // ✅ Upload file with progress tracking
+  // ✅ Upload
   const handleAddMedia = async (e) => {
     const files = Array.from(e.target.files);
+    if (!files.length) return;
 
     files.forEach(async (file) => {
       const tempId = `${file.name}-${Date.now()}`;
       setMedia((prev) => [
         ...prev,
-        { id: tempId, name: file.name, type: file.type, progress: 0, uploading: true },
+        {
+          id: tempId,
+          name: file.name,
+          type: file.type,
+          progress: 0,
+          uploading: true,
+        },
       ]);
 
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
+      formData.append(
+        "upload_preset",
+        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+      );
 
       try {
         await new Promise((resolve, reject) => {
@@ -66,14 +97,17 @@ export default function Gallery() {
                   name: file.name,
                   type: file.type,
                   url: uploadData.secure_url,
+                  favorite: false,
                 }),
               });
               const saved = await res.json();
+              const savedMedia = Array.isArray(saved)
+                ? saved[0]
+                : saved.media || saved;
+
               setMedia((prev) =>
-                prev.map((m) =>
-                  m.id === tempId
-                    ? { ...saved, uploading: false, progress: 100 }
-                    : m
+                [...prev.filter((m) => m.id !== tempId), savedMedia].sort((a, b) =>
+                  a.favorite === b.favorite ? 0 : a.favorite ? -1 : 1
                 )
               );
               resolve();
@@ -94,17 +128,15 @@ export default function Gallery() {
     });
   };
 
-  // ✅ Delete from Prisma
+  // ✅ Delete
   const handleDelete = async (index) => {
     const target = media[index];
-    if (!target || !target.id) return;
+    if (!target?.id) return;
 
     try {
       const res = await fetch(`/api/gallery/${target.id}`, { method: "DELETE" });
       if (res.ok) {
         setMedia((prev) => prev.filter((_, i) => i !== index));
-      } else {
-        console.error("❌ Failed to delete:", res.statusText);
       }
     } catch (err) {
       console.error("❌ Error deleting media:", err);
@@ -112,35 +144,50 @@ export default function Gallery() {
     setMenu({ visible: false, x: 0, y: 0, index: null });
   };
 
-  // 🖱 Context Menu & Long Press (with haptic feedback)
+  // ✅ Favorite toggle
+  const toggleFavorite = async (id) => {
+    const updated = media.map((m) =>
+      m.id === id ? { ...m, favorite: !m.favorite } : m
+    );
+    const sorted = [...updated].sort((a, b) =>
+      a.favorite === b.favorite ? 0 : a.favorite ? -1 : 1
+    );
+    setMedia(sorted);
+
+    try {
+      const target = updated.find((m) => m.id === id);
+      await fetch(`/api/gallery/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ favorite: target.favorite }),
+      });
+    } catch (err) {
+      console.error("❌ Error updating favorite:", err);
+    }
+  };
+
+  // 🖱 Context menu & long press
   const startLongPress = (e, idx) => {
-  const target = e.currentTarget;
+    const target = e.currentTarget;
+    longPressTimer.current = setTimeout(() => {
+      if (!target) return;
+      if (navigator.vibrate) navigator.vibrate(50);
+      const rect = target.getBoundingClientRect();
+      setMenu({
+        visible: true,
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+        index: idx,
+      });
+    }, 600);
+  };
 
-  longPressTimer.current = setTimeout(() => {
-    // Ensure the target still exists in DOM
-    if (!target) return;
-
-    // Haptic feedback
-    if (navigator.vibrate) navigator.vibrate(50);
-
-    // Safely get the element position
-    const rect = target.getBoundingClientRect();
-    setMenu({
-      visible: true,
-      x: rect.left + rect.width / 2,
-      y: rect.top + rect.height / 2,
-      index: idx,
-    });
-  }, 600);
-};
-
-const endLongPress = () => {
-  // Cancel long press safely
-  if (longPressTimer.current) {
-    clearTimeout(longPressTimer.current);
-    longPressTimer.current = null;
-  }
-};
+  const endLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
 
   const handleContextMenu = (e, idx) => {
     e.preventDefault();
@@ -151,19 +198,21 @@ const endLongPress = () => {
       y: rect.top + rect.height / 2,
       index: idx,
     });
-
-    // Optional: haptic feedback on desktop touchpads that support it (Safari / Chrome)
-    if (navigator.vibrate) {
-      navigator.vibrate(30);
-    }
+    if (navigator.vibrate) navigator.vibrate(30);
   };
 
-  // Close menu on outside click
+  // Close menu
   useEffect(() => {
-    const handleClickOutside = () => setMenu({ visible: false, x: 0, y: 0, index: null });
-    window.addEventListener("click", handleClickOutside);
-    return () => window.removeEventListener("click", handleClickOutside);
+    const closeMenu = () =>
+      setMenu({ visible: false, x: 0, y: 0, index: null });
+    window.addEventListener("click", closeMenu);
+    return () => window.removeEventListener("click", closeMenu);
   }, []);
+
+  // ✅ Skeleton
+  const SkeletonCard = () => (
+    <div className="relative overflow-hidden bg-[#1b1b1b] rounded-xl h-60 w-full animate-pulse" />
+  );
 
   return (
     <div className="min-h-screen p-8 bg-gradient-to-br from-[#0a0a0a] to-[#1a1a1a] text-white relative">
@@ -181,7 +230,14 @@ const endLongPress = () => {
         </label>
       </div>
 
-      {media.length === 0 ? (
+      {/* Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      ) : media.length === 0 ? (
         <p className="text-zinc-400 text-lg text-center mt-20">
           No media uploaded yet. Click “Add Media” to upload!
         </p>
@@ -197,43 +253,38 @@ const endLongPress = () => {
               onTouchStart={(e) => startLongPress(e, idx)}
               onTouchEnd={endLongPress}
             >
-              {file.type?.startsWith("image/") ? (
+              {file?.type?.startsWith("image/") ? (
                 <img
                   src={file.url}
                   alt={file.name}
-                  className={`object-cover w-full h-60 transition-all duration-300 ${
-                    file.uploading ? "opacity-70" : ""
-                  }`}
+                  className="object-cover w-full h-60 transition-all duration-300"
                 />
               ) : (
                 <video
                   src={file.url}
-                  className={`object-cover w-full h-60 transition-all duration-300 ${
-                    file.uploading ? "opacity-70" : ""
-                  }`}
+                  className="object-cover w-full h-60 transition-all duration-300"
                   muted
                 />
               )}
 
-              {/* ✅ Upload Progress Bar */}
-              {file.uploading && (
-                <div className="absolute bottom-0 left-0 w-full h-2 bg-gray-700">
-                  <div
-                    className="h-2 bg-green-500 transition-all duration-300"
-                    style={{ width: `${file.progress}%` }}
-                  ></div>
-                  <span className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-white">
-                    {file.progress}%
-                  </span>
-                </div>
-              )}
-
-              {/* ❌ Failed Upload */}
-              {file.failed && (
-                <div className="absolute bottom-0 left-0 w-full bg-red-600 text-xs text-center text-white py-1">
-                  ❌ Upload Failed
-                </div>
-              )}
+              {/* ⭐ Favorite button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFavorite(file.id);
+                }}
+                className={`absolute top-3 right-3 p-2 rounded-full shadow-md border backdrop-blur-md transition-transform hover:scale-110 ${
+                  file.favorite
+                    ? "bg-yellow-400 text-black border-yellow-300 shadow-yellow-300/60"
+                    : "bg-black/50 text-white border-white/30"
+                }`}
+              >
+                <Star
+                  size={18}
+                  fill={file.favorite ? "currentColor" : "none"}
+                  className={file.favorite ? "drop-shadow-[0_0_4px_#facc15]" : ""}
+                />
+              </button>
             </motion.div>
           ))}
         </div>
@@ -283,25 +334,29 @@ const endLongPress = () => {
             onClick={() => setSelectedMedia(null)}
           >
             <motion.div
-              className="max-w-4xl max-h-[85vh] p-4"
+              className="max-w-[95vw] max-h-[90vh] flex justify-center items-center p-4"
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.8 }}
               onClick={(e) => e.stopPropagation()}
             >
-              {selectedMedia.type.startsWith("image/") ? (
+              {selectedMedia?.type?.startsWith("image/") ? (
                 <img
-                  src={selectedMedia.url}
-                  alt={selectedMedia.name}
-                  className="w-full h-auto rounded-lg"
+                  src={selectedMedia?.url}
+                  alt={selectedMedia?.name || "Image"}
+                  className="max-h-[90vh] w-auto object-contain rounded-lg"
                 />
-              ) : (
+              ) : selectedMedia?.url ? (
                 <video
-                  src={selectedMedia.url}
+                  src={selectedMedia?.url}
                   controls
                   autoPlay
-                  className="w-full h-auto rounded-lg"
+                  className="max-h-[90vh] w-auto rounded-lg"
                 />
+              ) : (
+                <p className="text-center text-zinc-400">
+                  ⚠️ Unable to preview this file.
+                </p>
               )}
             </motion.div>
 

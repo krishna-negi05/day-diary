@@ -38,16 +38,15 @@ export default function Calendar() {
         setLoading(false);
       }
     };
-
     fetchEntries();
   }, []);
 
-  // ✅ Leap year + February helper
+  // ✅ Leap year helper
   const isLeapYear = (year) =>
     (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
   const getFebDays = (year) => (isLeapYear(year) ? 29 : 28);
 
-  // ✅ Generate days grid for selected month/year
+  // ✅ Generate days for selected month/year
   useEffect(() => {
     const daysInMonth = [
       31, getFebDays(year), 31, 30, 31, 30,
@@ -65,14 +64,12 @@ export default function Calendar() {
     setDays(newDays);
   }, [month, year]);
 
-  // ✅ Handle date click
   const handleDateClick = (day) => {
     if (!day) return;
     const formattedDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     setSelectedDateForDiary(formattedDate);
   };
 
-  // ✅ Show diary page when date selected
   if (selectedDateForDiary) {
     const entry = entries[selectedDateForDiary];
     return (
@@ -84,7 +81,11 @@ export default function Calendar() {
     );
   }
 
-  // ✅ Calendar view
+  // ✅ Skeleton shimmer card
+  const SkeletonDay = () => (
+    <div className="relative overflow-hidden bg-[#d1d1d1]/40 dark:bg-[#1e1e1e] rounded-md h-16 w-full skeleton-shimmer"></div>
+  );
+
   return (
     <div className={`calendar ${darkMode ? "dark" : "light"}`}>
       {/* Header */}
@@ -107,7 +108,6 @@ export default function Calendar() {
         </div>
       </div>
 
-
       {/* Calendar Body */}
       <div className="calendar-body">
         <div className="calendar-week-day">
@@ -116,29 +116,38 @@ export default function Calendar() {
           ))}
         </div>
 
-        <div className="calendar-days">
-          {days.map((d, i) => {
-            if (!d) return <div key={i}></div>;
+        {/* ✅ Show shimmer loader while entries load */}
+        {loading ? (
+          <div className="calendar-days grid grid-cols-7 gap-2 mt-4">
+            {Array.from({ length: 35 }).map((_, i) => (
+              <SkeletonDay key={i} />
+            ))}
+          </div>
+        ) : (
+          <div className="calendar-days">
+            {days.map((d, i) => {
+              if (!d) return <div key={i}></div>;
 
-            const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-            const hasEntry = entries[dateKey];
-            const isToday =
-              d === currentDate.getDate() &&
-              year === currentDate.getFullYear() &&
-              month === currentDate.getMonth();
+              const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+              const hasEntry = entries[dateKey];
+              const isToday =
+                d === currentDate.getDate() &&
+                year === currentDate.getFullYear() &&
+                month === currentDate.getMonth();
 
-            return (
-              <div
-                key={i}
-                className={`${isToday ? "curr-date" : ""} ${hasEntry ? "has-entry" : ""}`}
-                onClick={() => handleDateClick(d)}
-              >
-                {d}
-                {hasEntry && <span className="entry-dot"></span>}
-              </div>
-            );
-          })}
-        </div>
+              return (
+                <div
+                  key={i}
+                  className={`${isToday ? "curr-date" : ""} ${hasEntry ? "has-entry" : ""}`}
+                  onClick={() => handleDateClick(d)}
+                >
+                  {d}
+                  {hasEntry && <span className="entry-dot"></span>}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Footer */}
@@ -173,4 +182,3 @@ export default function Calendar() {
     </div>
   );
 }
-1

@@ -14,20 +14,18 @@ export async function GET() {
   }
 }
 
-// ✅ POST: Add new media
+// ✅ POST new media
 export async function POST(request) {
   try {
-    const { name, type, url } = await request.json();
+    const { name, type, url, favorite = false } = await request.json();
     if (!name || !type || !url)
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
-    // ✅ Create new media entry and return full object including ID
     const newMedia = await prisma.galleryMedia.create({
-      data: { name, type, url },
+      data: { name, type, url, favorite },
     });
 
-    console.log("✅ Created new media:", newMedia);
-    return NextResponse.json(newMedia); // return record with id
+    return NextResponse.json(newMedia);
   } catch (err) {
     console.error("❌ Error adding media:", err);
     return NextResponse.json({ error: "Failed to add media" }, { status: 500 });
