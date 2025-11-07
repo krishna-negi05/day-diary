@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star } from "lucide-react";
 
 export default function Gallery() {
   const [media, setMedia] = useState([]);
@@ -23,16 +22,7 @@ export default function Gallery() {
           ? data.media
           : [];
 
-        const normalized = mediaArray.map((item) => ({
-          ...item,
-          favorite: item.favorite === true || item.favorite === "true",
-        }));
-
-        const sorted = normalized.sort((a, b) =>
-          a.favorite === b.favorite ? 0 : a.favorite ? -1 : 1
-        );
-
-        setMedia(sorted);
+        setMedia(mediaArray);
       } catch (err) {
         console.error("❌ Error fetching gallery:", err);
       } finally {
@@ -97,7 +87,6 @@ export default function Gallery() {
                   name: file.name,
                   type: file.type,
                   url: uploadData.secure_url,
-                  favorite: false,
                 }),
               });
               const saved = await res.json();
@@ -105,11 +94,11 @@ export default function Gallery() {
                 ? saved[0]
                 : saved.media || saved;
 
-              setMedia((prev) =>
-                [...prev.filter((m) => m.id !== tempId), savedMedia].sort((a, b) =>
-                  a.favorite === b.favorite ? 0 : a.favorite ? -1 : 1
-                )
-              );
+              setMedia((prev) => [
+                ...prev.filter((m) => m.id !== tempId),
+                savedMedia,
+              ]);
+
               resolve();
             } else reject(new Error("Upload failed"));
           };
@@ -142,28 +131,6 @@ export default function Gallery() {
       console.error("❌ Error deleting media:", err);
     }
     setMenu({ visible: false, x: 0, y: 0, index: null });
-  };
-
-  // ✅ Favorite toggle
-  const toggleFavorite = async (id) => {
-    const updated = media.map((m) =>
-      m.id === id ? { ...m, favorite: !m.favorite } : m
-    );
-    const sorted = [...updated].sort((a, b) =>
-      a.favorite === b.favorite ? 0 : a.favorite ? -1 : 1
-    );
-    setMedia(sorted);
-
-    try {
-      const target = updated.find((m) => m.id === id);
-      await fetch(`/api/gallery/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ favorite: target.favorite }),
-      });
-    } catch (err) {
-      console.error("❌ Error updating favorite:", err);
-    }
   };
 
   // 🖱 Context menu & long press
@@ -242,10 +209,14 @@ export default function Gallery() {
           No media uploaded yet. Click “Add Media” to upload!
         </p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <motion.div
+          layout
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+        >
           {media.map((file, idx) => (
             <motion.div
               key={file.id || idx}
+              layout
               className="relative rounded-xl overflow-hidden shadow-lg cursor-pointer group"
               whileHover={{ scale: 1.03 }}
               onClick={() => setSelectedMedia(file)}
@@ -257,37 +228,36 @@ export default function Gallery() {
                 <img
                   src={file.url}
                   alt={file.name}
-                  className="object-cover w-full h-60 transition-all duration-300"
+                  className={`object-cover w-full h-60 transition-all duration-300 ${
+                    file.uploading ? "opacity-70 blur-[1px]" : ""
+                  }`}
                 />
               ) : (
                 <video
                   src={file.url}
-                  className="object-cover w-full h-60 transition-all duration-300"
+                  className={`object-cover w-full h-60 transition-all duration-300 ${
+                    file.uploading ? "opacity-70 blur-[1px]" : ""
+                  }`}
                   muted
                 />
               )}
 
-              {/* ⭐ Favorite button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleFavorite(file.id);
-                }}
-                className={`absolute top-3 right-3 p-2 rounded-full shadow-md border backdrop-blur-md transition-transform hover:scale-110 ${
-                  file.favorite
-                    ? "bg-yellow-400 text-black border-yellow-300 shadow-yellow-300/60"
-                    : "bg-black/50 text-white border-white/30"
-                }`}
-              >
-                <Star
-                  size={18}
-                  fill={file.favorite ? "currentColor" : "none"}
-                  className={file.favorite ? "drop-shadow-[0_0_4px_#facc15]" : ""}
-                />
-              </button>
+              {/* ✅ Upload progress bar */}
+              {file.uploading && (
+                <div className="absolute bottom-0 left-0 w-full h-2 bg-zinc-800/70 overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-green-400 via-lime-400 to-green-500 animate-pulse"
+                    style={{ width: `${file.progress || 0}%` }}
+                    transition={{ ease: "easeOut", duration: 0.3 }}
+                  />
+                  <span className="absolute right-2 bottom-3 text-xs text-green-300 font-semibold drop-shadow-md">
+                    {file.progress}%
+                  </span>
+                </div>
+              )}
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
 
       {/* Context Menu */}
