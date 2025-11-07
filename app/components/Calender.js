@@ -19,10 +19,12 @@ export default function Calendar() {
   const [showMonths, setShowMonths] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [quote, setQuote] = useState(""); 
+  const [fadeIn, setFadeIn] = useState(false);
 
   const currentDate = new Date();
 
-  // ✅ Fetch entries from Prisma API
+  // ✅ Fetch diary entries
   useEffect(() => {
     const fetchEntries = async () => {
       try {
@@ -41,12 +43,36 @@ export default function Calendar() {
     fetchEntries();
   }, []);
 
-  // ✅ Leap year helper
+  // ✅ Fetch AI-generated quote from Gemini
+  useEffect(() => {
+    const getQuote = async () => {
+      try {
+        const res = await fetch("/api/quote");
+        const data = await res.json();
+        setQuote(data.quote || "Keep believing — the best is yet to come.");
+      } catch (err) {
+        console.error("Error fetching AI quote:", err);
+        setQuote("Even small steps move you forward.");
+      }
+    };
+    getQuote();
+  }, []);
+
+  // ✨ Fade-in animation when quote loads
+  useEffect(() => {
+    if (quote) {
+      setFadeIn(true);
+      const timer = setTimeout(() => setFadeIn(false), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [quote]);
+
+  // ✅ Helper for leap year
   const isLeapYear = (year) =>
     (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
   const getFebDays = (year) => (isLeapYear(year) ? 29 : 28);
 
-  // ✅ Generate days for selected month/year
+  // ✅ Generate days for month/year
   useEffect(() => {
     const daysInMonth = [
       31, getFebDays(year), 31, 30, 31, 30,
@@ -81,7 +107,7 @@ export default function Calendar() {
     );
   }
 
-  // ✅ Skeleton shimmer card
+  // ✅ Skeleton shimmer
   const SkeletonDay = () => (
     <div className="relative overflow-hidden bg-[#d1d1d1]/40 dark:bg-[#1e1e1e] rounded-md h-16 w-full skeleton-shimmer"></div>
   );
@@ -116,7 +142,6 @@ export default function Calendar() {
           ))}
         </div>
 
-        {/* ✅ Show shimmer loader while entries load */}
         {loading ? (
           <div className="calendar-days grid grid-cols-7 gap-2 mt-4">
             {Array.from({ length: 35 }).map((_, i) => (
@@ -179,6 +204,26 @@ export default function Calendar() {
           ))}
         </div>
       )}
+
+      {/* ✨ AI-Generated Quote */}
+      {/* ✨ AI-Generated Quote */}
+<div
+  className={`mt-8 text-center tracking-normal transition-all duration-700 ${
+    darkMode ? "text-white/90" : "text-black/80"
+  } ${fadeIn ? "opacity-100" : "opacity-80"}`}
+  style={{
+    fontFamily: "'Titillium Web', sans-serif",
+    fontSize: "0.95rem",
+    letterSpacing: "0.3px",
+    lineHeight: "1.6",
+    textShadow: darkMode
+      ? "0 0 6px rgba(255,255,255,0.1)"
+      : "0 0 6px rgba(0,0,0,0.05)",
+  }}
+>
+  💭 {quote}
+</div>
+
     </div>
   );
 }
