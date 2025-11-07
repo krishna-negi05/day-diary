@@ -52,22 +52,22 @@ export default function Diary({ selectedDate, onBack }) {
     const emoji = mood.split(" ")[0];
     switch (emoji) {
       case "😊":
-        setBgGradient("linear-gradient(135deg, #fff86b, #ffe66d, #ffd93d)");
+        setBgGradient( "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)");
         break;
       case "😌":
-        setBgGradient("linear-gradient(135deg, #b2f7ef, #a0e7e5, #cbf3f0)");
+        setBgGradient("linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)");
         break;
       case "😔":
-        setBgGradient("linear-gradient(135deg, #89a7d4, #cfd9df, #e2ebf0)");
+        setBgGradient("linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%)");
         break;
       case "😤":
-        setBgGradient("linear-gradient(135deg, #ff7b7b, #ffb3b3, #ff9999)");
+        setBgGradient("linear-gradient(135deg, #f5576c 0%, #f093fb 100%)");
         break;
       case "💪":
-        setBgGradient("linear-gradient(135deg, #7effa0, #a1ffce, #faffd1)");
+        setBgGradient("linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)");
         break;
       default:
-        setBgGradient("linear-gradient(135deg, #ece9e6, #ffffff)");
+        setBgGradient("linear-gradient(135deg, #dbe6f6 0%, #c5796d 100%)");
     }
   };
 

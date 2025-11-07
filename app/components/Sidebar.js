@@ -10,18 +10,22 @@ export default function Sidebar() {
     { href: "/", icon: "/icons/home.png", label: "Home" },
     { href: "/add", icon: "/icons/add.png", label: "Add Entry" },
     { href: "/gallery", icon: "/icons/gallery.png", label: "Gallery" },
+
+    // 🧠 NEW ChatGPT-like Assistant Link
+    { href: "/chat", icon: "/icons/robot.png", label: "Chat with AI" },
   ];
 
   return (
     <aside
       className="
-        flex flex-col justify-between h-screen 
+        flex flex-col justify-between h-full 
         transition-all duration-300 w-20 md:w-64
         bg-gradient-to-br from-[#1a1a1e] to-[#101013]
         shadow-[8px_8px_20px_rgba(0,0,0,0.6),_-6px_-6px_14px_rgba(60,60,70,0.25)]
         border-r border-zinc-800 text-white
+        backdrop-blur-xl bg-opacity-80
       "
-      style={{ borderRadius: "0 18px 18px 0" }}
+      style={{ borderRadius: '0 18px 18px 0' }}
     >
       {/* ===== Brand Section ===== */}
       <div>
@@ -80,7 +84,7 @@ export default function Sidebar() {
           alt="Profile"
           width={40}
           height={40}
-          className="rounded-full drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]"
+          className="w-10 h-10 rounded-full overflow-hidden drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]"
         />
         <div className="hidden md:block leading-tight">
           <div className="font-semibold text-gray-100">Divyata</div>
