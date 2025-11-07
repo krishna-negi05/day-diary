@@ -10,9 +10,8 @@ export default function Sidebar() {
     { href: "/", icon: "/icons/home.png", label: "Home" },
     { href: "/add", icon: "/icons/add.png", label: "Add Entry" },
     { href: "/gallery", icon: "/icons/gallery.png", label: "Gallery" },
-
-    // 🧠 NEW ChatGPT-like Assistant Link
     { href: "/chat", icon: "/icons/robot.png", label: "Chat with AI" },
+    { href: "/notes", icon: "/icons/notes.png", label: "Sticky Notes" }, // 🗒️ Added here below Chat
   ];
 
   return (
@@ -64,7 +63,13 @@ export default function Sidebar() {
                   }
                 `}
               >
-                <Image src={link.icon} alt={link.label} width={22} height={22} />
+                <Image
+                  src={link.icon}
+                  alt={link.label}
+                  width={22}
+                  height={22}
+                  className="opacity-90"
+                />
                 <span className="hidden md:inline">{link.label}</span>
               </div>
             </Link>

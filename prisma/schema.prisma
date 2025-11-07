@@ -34,3 +34,11 @@ model GalleryMedia {
 }
 
 
+model StickyNote {
+  id        Int      @id @default(autoincrement())
+  title     String?
+  content   String
+  color     String   @default("yellow")
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
