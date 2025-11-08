@@ -8,10 +8,16 @@ const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 export const metadata = {
   title: "Day Diary",
   description: "A personal online diary app",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", type: "image/x-icon" },
+      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
+    ],
+    apple: "/apple-touch-icon.png",
+    shortcut: "/favicon.ico",
+  },
 };
 
-// ✅ Fix: remove hardcoded "dark" class from <html>
-// ✅ Add data-theme attribute or let the wrapper manage theme toggling
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>

@@ -4,4 +4,5 @@ import { redirect } from "next/navigation";
 export default function HomePage() {
   // Redirect to /home automatically
   redirect("/home");
+  
 }

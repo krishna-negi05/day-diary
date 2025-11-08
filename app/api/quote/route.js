@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     const prompt = `
-    Generate a single short, poetic, and uplifting quote. Don't just add sun , mooon , cloud and all. Add anime quotes too.
+    Generate a single short, poetic, and uplifting small quote. Don't just add sun , mooon , cloud and all. Add anime quotes too.
     Example: "Even the quietest hearts beat with the strength to try again."
     Just return the quote itself, no extra text.
     `;
