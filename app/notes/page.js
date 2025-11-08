@@ -9,6 +9,7 @@ export default function StickyNotesWall() {
   const [text, setText] = useState("");
   const [color, setColor] = useState("yellow");
   const [editingNote, setEditingNote] = useState(null);
+  const [showHint, setShowHint] = useState(true); // 💡 hint visibility
   const wallRef = useRef(null);
 
   // 🧠 Load saved notes
@@ -21,6 +22,12 @@ export default function StickyNotesWall() {
   useEffect(() => {
     localStorage.setItem("realStickyNotes", JSON.stringify(notes));
   }, [notes]);
+
+  // 💡 Auto-hide hint after 5 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => setShowHint(false), 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const colors = [
     { name: "yellow", bg: "bg-yellow-200" },
@@ -59,7 +66,7 @@ export default function StickyNotesWall() {
     setNotes((prev) => prev.filter((n) => n.id !== id));
   };
 
-  // ✅ Fixed: Clamp note inside wall boundaries
+  // ✅ Keep notes within screen
   const handleDragEnd = (event, info, id) => {
     const wallRect = wallRef.current?.getBoundingClientRect();
     const noteRect = event.target.getBoundingClientRect();
@@ -69,7 +76,6 @@ export default function StickyNotesWall() {
     let newX = noteRect.left - wallRect.left;
     let newY = noteRect.top - wallRect.top;
 
-    // ✅ Clamp so it stays fully visible
     const maxX = wallRect.width - noteRect.width;
     const maxY = wallRect.height - noteRect.height;
 
@@ -90,6 +96,21 @@ export default function StickyNotesWall() {
           "url('https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTA4L3Jhd3BpeGVsX29mZmljZV8yOF8zZF9jdXRlX3JlbmRlcl9lbXB0eV9yb29tX2NsZWFuX3dhbGxfbXV0ZWRfYV82NWIwZjc5YS1mNGE5LTRjNzUtYTM4ZC05NWZlYzZmOWNkMWZfMS5qcGc.jpg')",
       }}
     >
+      {/* 💡 Drag hint */}
+      <AnimatePresence>
+        {showHint && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.8 }}
+            className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-sm px-4 py-2 rounded-full backdrop-blur-md border border-white/20 shadow-lg"
+          >
+            💡 Drag notes to move them
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Notes on wall */}
       <div className="absolute inset-0 pointer-events-none">
         <AnimatePresence>
