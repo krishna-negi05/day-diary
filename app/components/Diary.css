@@ -9,105 +9,213 @@
   align-items: center;
   font-family: "Poppins", sans-serif;
   transition: background 0.6s ease;
-  background-size: cover;
-  background-attachment: fixed;
+  overflow-x: hidden;
+  position: relative;
+  background-size: 200% 200%;
+  animation: gradientShift 15s ease infinite;
 }
 
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Floating background blobs */
+.diary-bg-blobs::before,
+.diary-bg-blobs::after {
+  content: "";
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.3;
+  animation: blobFloat 10s infinite alternate ease-in-out;
+}
+
+.diary-bg-blobs::before {
+  top: 10%;
+  left: 15%;
+  background: #c084fc;
+}
+.diary-bg-blobs::after {
+  bottom: 15%;
+  right: 10%;
+  background: #60a5fa;
+}
+
+@keyframes blobFloat {
+  from { transform: translate(0, 0); }
+  to { transform: translate(50px, -30px); }
+}
+
+/* Header */
 .diary-header {
   width: 100%;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 2rem;
+  position: relative;
+  z-index: 2;
 }
 
-.back-btn {
-  background: rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
+.back-btn-glass {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 10px;
+  color: #1a1a1a;
+  font-weight: 500;
   font-size: 1rem;
-  color: #222;
+  padding: 0.6rem 1.2rem;
   cursor: pointer;
-  padding: 0.4rem 0.8rem;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
   transition: all 0.3s ease;
-  backdrop-filter: blur(5px);
+}
+.back-btn-glass:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
 }
 
-.back-btn:hover {
-  background: rgba(255, 255, 255, 0.7);
-  transform: scale(1.05);
-}
-
-.diary-date {
-  font-size: 1.4rem;
+.diary-date-glow {
+  font-size: 1.5rem;
   font-weight: 600;
-  color: #333;
-  letter-spacing: 0.5px;
+  color: #1a1a1a;
 }
 
-.diary-body {
+/* 🌫️ Glassmorphic Diary Card */
+.diary-card {
   width: 100%;
   max-width: 950px;
-  background: rgba(255, 255, 255, 0.45);
-  border-radius: 25px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  padding: 2rem 2.5rem;
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.35); /* translucent white */
+  border-radius: 24px;
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow:
+    inset 0 0 20px rgba(255, 255, 255, 0.1),
+    0 8px 25px rgba(0, 0, 0, 0.08);
+  padding: 2.5rem 3rem;
+  z-index: 2;
+  transition: all 0.4s ease;
 }
 
-.note-display {
-  text-align: left;
-  animation: fadeIn 0.3s ease-in-out;
+.diary-card:hover {
+  box-shadow:
+    inset 0 0 20px rgba(255, 255, 255, 0.15),
+    0 12px 30px rgba(0, 0, 0, 0.12);
+  transform: scale(1.005);
 }
 
+/* Title + Mood */
 .note-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-
-.note-title {
-  font-family: "Merriweather", serif;
-  font-size: 2.2rem;
+.note-title-glow {
+  font-family: "Outfit", serif;
+  font-size: 2.3rem;
   font-weight: 700;
   color: #1a1a1a;
-  margin-bottom: 1rem;
+  letter-spacing: 0.3px;
+}
+.mood-glow {
+  font-size: 2.2rem;
+  color: #333;
 }
 
-.mood-emoji-large {
-  font-size: 2.5rem;
-  margin-left: 1rem;
-  user-select: none;
-}
-
-.note-content {
-  font-family: "Poppins", sans-serif;
-  font-size: 1.1rem;
+/* Diary Text */
+.note-content-modern {
+  margin-top: 1rem;
+  font-size: 1.15rem;
   line-height: 1.8;
   color: #222;
   white-space: pre-wrap;
   letter-spacing: 0.4px;
-  margin-top: 0.8rem;
+  font-family: "Poppins", sans-serif;
 }
 
-.no-note {
+/* Attachments */
+.file-grid {
+  margin-top: 2.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.file-tile {
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 0 15px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0,0,0,0.1);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(6px);
+}
+.image-tile {
+  height: 220px;
+  object-fit: cover;
+}
+.video-tile {
+  height: 220px;
+  background: #000;
+}
+.link-tile {
+  text-align: center;
+  padding: 1.2rem;
+  background: rgba(255,255,255,0.8);
+  color: #222;
+  border: 1px solid #ddd;
+}
+
+/* No Entry */
+.no-note-fancy {
   text-align: center;
   font-size: 1.2rem;
   color: #555;
   font-style: italic;
   margin-top: 4rem;
-  opacity: 0.8;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Fullscreen Viewer */
+.fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.fullscreen-content {
+  position: relative;
+  max-width: 85vw;
+  max-height: 90vh;
+}
+
+.close-btn {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  font-size: 2.5rem;
+  background: transparent;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.close-btn:hover {
+  transform: scale(1.1);
+}
+
+.fullscreen-image, .fullscreen-video {
+  border-radius: 18px;
+  max-height: 85vh;
+  box-shadow: 0 0 30px rgba(0,0,0,0.3);
 }

@@ -5,113 +5,87 @@ import "../components/Diary.css";
 
 export default function Diary({ selectedDate, onBack }) {
   const [entry, setEntry] = useState(null);
-  const [bgGradient, setBgGradient] = useState("linear-gradient(135deg, #ece9e6, #ffffff)");
+  const [bgGradient, setBgGradient] = useState("");
   const [fullscreenMedia, setFullscreenMedia] = useState(null);
 
-  // ✅ Load from Prisma API
+  // ✅ Fetch entry
   useEffect(() => {
     if (!selectedDate) return;
-
     const fetchEntry = async () => {
-  try {
-    const res = await fetch(`/api/entries?date=${selectedDate}`);
-    const data = await res.json();
-    if (data) {
-      // Normalize files before setting state
-      if (data.files) {
-        data.files = data.files.map((f) => {
-          if (typeof f === "string") {
-            const name = f.split("/").pop();
-            const ext = name.split(".").pop();
-            const type = ext === "mp4" ? "video/mp4" : `image/${ext}`;
-            return { url: f, name, type };
+      try {
+        const res = await fetch(`/api/entries?date=${selectedDate}`);
+        const data = await res.json();
+        if (data) {
+          if (data.files) {
+            data.files = data.files.map((f) => {
+              if (typeof f === "string") {
+                const name = f.split("/").pop();
+                const ext = name.split(".").pop();
+                const type = ext === "mp4" ? "video/mp4" : `image/${ext}`;
+                return { url: f, name, type };
+              }
+              return f;
+            });
           }
-          return f;
-        });
+          setEntry(data);
+          setMoodBackground(data.mood);
+        } else setEntry(null);
+      } catch (err) {
+        console.error("Error fetching entry:", err);
       }
-      setEntry(data);
-      setMoodBackground(data.mood);
-    } else {
-      setEntry(null);
-      setMoodBackground(null);
-    }
-  } catch (err) {
-    console.error("Error fetching diary entry:", err);
-  }
-};
-
+    };
     fetchEntry();
   }, [selectedDate]);
 
-  // 🌈 Mood → Gradient
+  // 🌈 Mood-based gradient theme
   const setMoodBackground = (mood) => {
-    if (!mood) {
-      setBgGradient("linear-gradient(135deg, #ece9e6, #ffffff)");
-      return;
-    }
-    const emoji = mood.split(" ")[0];
-    switch (emoji) {
-      case "😊":
-        setBgGradient( "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)");
-        break;
-      case "😌":
-        setBgGradient("linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)");
-        break;
-      case "😔":
-        setBgGradient("linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%)");
-        break;
-      case "😤":
-        setBgGradient("linear-gradient(135deg, #f5576c 0%, #f093fb 100%)");
-        break;
-      case "💪":
-        setBgGradient("linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)");
-        break;
-      default:
-        setBgGradient("linear-gradient(135deg, #dbe6f6 0%, #c5796d 100%)");
-    }
+    const gradients = {
+      "😊": "linear-gradient(135deg, #ffecd2, #fcb69f)",
+      "😌": "linear-gradient(135deg, #a1c4fd, #c2e9fb)",
+      "😔": "linear-gradient(135deg, #d4fc79, #96e6a1)",
+      "😤": "linear-gradient(135deg, #f5576c, #f093fb)",
+      "💪": "linear-gradient(135deg, #43e97b, #38f9d7)",
+      default: "linear-gradient(135deg, #dbe6f6, #c5796d)",
+    };
+    setBgGradient(gradients[mood] || gradients.default);
   };
 
-  // 🎨 File Preview
   const renderFilePreview = (file) => {
     if (!file) return null;
     const isImage = file.type?.startsWith("image/");
     const isVideo = file.type?.startsWith("video/");
 
-    if (isImage) {
+    if (isImage)
       return (
         <motion.img
           src={file.url}
           alt={file.name}
-          className="rounded-xl shadow-md object-cover w-full h-56 border border-zinc-200 dark:border-zinc-700 cursor-pointer"
-          whileHover={{ scale: 1.05 }}
-          transition={{ duration: 0.2 }}
+          className="file-tile image-tile"
+          whileHover={{ scale: 1.06 }}
           onClick={() => setFullscreenMedia(file)}
         />
       );
-    } else if (isVideo) {
+    if (isVideo)
       return (
         <motion.video
           controls
-          className="rounded-xl shadow-md w-full h-56 border border-zinc-200 dark:border-zinc-700 object-cover cursor-pointer"
+          className="file-tile video-tile"
           whileHover={{ scale: 1.03 }}
-          transition={{ duration: 0.2 }}
           onClick={() => setFullscreenMedia(file)}
         >
           <source src={file.url} type={file.type} />
         </motion.video>
       );
-    } else {
-      return (
-        <motion.a
-          href={file.url}
-          download={file.name}
-          className="flex items-center justify-center gap-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 rounded-lg p-3 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all duration-200 shadow-sm"
-          whileHover={{ scale: 1.02 }}
-        >
-          📎 {file.name}
-        </motion.a>
-      );
-    }
+    return (
+      <motion.a
+        href={file.url}
+        download
+        className="file-tile link-tile"
+        whileHover={{ scale: 1.05 }}
+      >
+        📎 {file.name}
+      </motion.a>
+    );
   };
 
   return (
@@ -119,87 +93,99 @@ export default function Diary({ selectedDate, onBack }) {
       <motion.div
         className="diary-container"
         style={{ background: bgGradient }}
-        initial={{ opacity: 0, y: 50 }}
+        initial={{ opacity: 0, y: 60 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.6 }}
       >
+        {/* Floating particles */}
+        <div className="diary-bg-blobs"></div>
+
+        {/* Header */}
         <div className="diary-header">
-          <button className="back-btn" onClick={onBack}>← Back</button>
-          <h2 className="diary-date">{selectedDate}</h2>
+          <motion.button
+            className="back-btn-glass"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onBack}
+          >
+            ← Back
+          </motion.button>
+          <motion.h2
+            className="diary-date-glow"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            {selectedDate}
+          </motion.h2>
         </div>
 
-        <div className="diary-body">
+        {/* Diary Content */}
+        <motion.div
+          className="diary-card"
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
           {entry ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="note-display"
-            >
+            <>
               <div className="note-top">
-                <h3 className="note-title">{entry.title || "Untitled Entry"}</h3>
-                {entry.mood && <span className="mood-emoji-large">{entry.mood.split(" ")[0]}</span>}
+                <h3 className="note-title-glow">{entry.title || "Untitled Entry"}</h3>
+                {entry.mood && <span className="mood-glow">{entry.mood}</span>}
               </div>
 
-              <p className="note-content whitespace-pre-wrap leading-relaxed text-zinc-800 dark:text-zinc-100">
+              <p className="note-content-modern">
                 {entry.content || "No content written."}
               </p>
 
-              {entry.files && entry.files.length > 0 && (
-                <div className="mt-9">
-                  <h4 className="font-roboto text-zinc-900 dark:text-zinc-900 text-md mb-3">
-                    Attached Files :
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {entry.files.map((file, idx) => (
-                      <motion.div key={idx}>{renderFilePreview(file)}</motion.div>
-                    ))}
-                  </div>
+              {entry.files?.length > 0 && (
+                <div className="file-grid">
+                  {entry.files.map((file, i) => (
+                    <motion.div key={i}>{renderFilePreview(file)}</motion.div>
+                  ))}
                 </div>
               )}
-            </motion.div>
+            </>
           ) : (
-            <p className="no-note text-zinc-700 dark:text-zinc-300">No entry for this date yet.</p>
+            <p className="no-note-fancy">No entry found for this date.</p>
           )}
-        </div>
+        </motion.div>
       </motion.div>
 
       {/* 🖼️ Fullscreen Media Modal */}
       <AnimatePresence>
         {fullscreenMedia && (
           <motion.div
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-md"
+            className="fullscreen-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setFullscreenMedia(null)}
           >
             <motion.div
-              className="relative max-w-5xl max-h-[90vh] w-full flex justify-center"
+              className="fullscreen-content"
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.8 }}
               onClick={(e) => e.stopPropagation()}
             >
               <button
-                className="absolute top-4 right-4 text-white text-3xl font-bold bg-black/50 rounded-full px-3 py-1 hover:bg-black/70"
+                className="close-btn"
                 onClick={() => setFullscreenMedia(null)}
               >
                 ✕
               </button>
-
               {fullscreenMedia.type.startsWith("image/") ? (
                 <img
                   src={fullscreenMedia.url}
                   alt={fullscreenMedia.name}
-                  className="max-h-[85vh] rounded-lg shadow-lg object-contain"
+                  className="fullscreen-image"
                 />
               ) : (
                 <video
                   src={fullscreenMedia.url}
                   controls
                   autoPlay
-                  className="max-h-[85vh] rounded-lg shadow-lg"
+                  className="fullscreen-video"
                 />
               )}
             </motion.div>
