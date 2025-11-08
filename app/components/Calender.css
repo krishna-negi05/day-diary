@@ -5,8 +5,8 @@
   --dark-hover: rgba(60, 60, 90, 0.7);
   --dark-text: #f8fbff;
 
-  --light-body: #ffffff; /* fixed to pure white */
-  --light-main: rgba(255, 255, 255, 0.9); /* slightly visible glass */
+  --light-body: #ffffff;
+  --light-main: rgba(255, 255, 255, 0.9);
   --light-second: #d3d3d3;
   --light-hover: rgba(240, 240, 240, 0.9);
   --light-text: #1c1c1c;
@@ -19,7 +19,9 @@
   --font-family: "Poppins", sans-serif;
 }
 
-/* themes */
+/* ===================================
+   🌓 THEME VARIABLES
+   =================================== */
 .dark {
   --bg-body: var(--dark-body);
   --bg-main: var(--dark-main);
@@ -42,6 +44,9 @@
   box-sizing: border-box;
 }
 
+/* ===================================
+   🌌 CALENDAR WRAPPER BACKGROUND
+   =================================== */
 .calendar-wrapper {
   display: flex;
   justify-content: center;
@@ -55,7 +60,7 @@
   transition: background 0.5s ease;
 }
 
-/* floating particles */
+/* floating blurred particles for background */
 .calendar-wrapper::before,
 .calendar-wrapper::after {
   content: "";
@@ -83,7 +88,9 @@
   }
 }
 
-/* container */
+/* ===================================
+   🪟 CALENDAR CONTAINER
+   =================================== */
 .calendar {
   width: max-content;
   padding: 25px;
@@ -96,7 +103,9 @@
   transition: background 0.5s ease, color 0.5s ease;
 }
 
-/* header */
+/* ===================================
+   📅 HEADER
+   =================================== */
 .calendar-header {
   display: flex;
   justify-content: space-between;
@@ -108,7 +117,9 @@
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
 }
 
-/* body */
+/* ===================================
+   📆 BODY & DAYS
+   =================================== */
 .calendar-body {
   padding: 10px;
 }
@@ -147,6 +158,7 @@
   background: rgba(255, 255, 255, 0.05);
 }
 
+/* Hover effect */
 .calendar-days div:hover {
   background: linear-gradient(135deg, var(--accent), var(--purple));
   color: white;
@@ -154,6 +166,7 @@
   box-shadow: 0 0 12px rgba(125, 211, 252, 0.6);
 }
 
+/* Current Date Highlight */
 .calendar-days .curr-date {
   background: linear-gradient(135deg, var(--purple), var(--pink));
   color: white;
@@ -161,7 +174,9 @@
   box-shadow: 0 0 16px rgba(192, 132, 252, 0.5);
 }
 
-/* pickers */
+/* ===================================
+   🗓️ PICKERS (Month & Year)
+   =================================== */
 .month-picker {
   padding: 5px 12px;
   border-radius: 12px;
@@ -190,7 +205,9 @@
   background: rgba(255, 255, 255, 0.15);
 }
 
-/* footer / toggle */
+/* ===================================
+   🌙 FOOTER (Mode Toggle)
+   =================================== */
 .calendar-footer {
   margin-top: 10px;
   display: flex;
@@ -201,78 +218,10 @@
   font-size: 0.9rem;
   margin-right: 10px;
   transition: color 0.3s;
-  color: var(--color-txt); /* 👈 add this line */
+  color: var(--color-txt);
 }
 
-/* ================================================
-   📅 Fancy Skeleton Loader (for Calendar loading)
-   ================================================ */
-
-.skeleton-shimmer {
-  position: relative;
-  overflow: hidden;
-  border-radius: 12px;
-  background: linear-gradient(
-    100deg,
-    rgba(220, 220, 220, 0.4) 10%,
-    rgba(245, 245, 245, 0.8) 20%,
-    rgba(220, 220, 220, 0.4) 30%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.15);
-  transition: background 0.4s ease, box-shadow 0.4s ease;
-}
-
-/* ✨ Dark mode version */
-.dark .skeleton-shimmer {
-  background: linear-gradient(
-    100deg,
-    rgba(40, 40, 50, 0.6) 10%,
-    rgba(70, 70, 90, 0.9) 20%,
-    rgba(40, 40, 50, 0.6) 30%
-  );
-  background-size: 200% 100%;
-  box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.05);
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-/* 🪄 Optional: smooth fade-in for when data loads */
-.fade-in {
-  animation: fadeIn 0.5s ease forwards;
-}
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* 💎 Skeleton calendar grid (optional customization) */
-.skeleton-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-  padding: 10px;
-}
-
-.skeleton-grid .skeleton-shimmer {
-  height: 50px;
-  border-radius: 12px;
-}
-
+/* Toggle Switch */
 .dark-mode-switch {
   width: 50px;
   height: 26px;
@@ -294,7 +243,6 @@
   transition: all 0.3s ease;
 }
 
-/* fixed toggle movement */
 .light .dark-mode-switch-ident {
   left: 2px;
 }
@@ -302,7 +250,9 @@
   left: calc(100% - 24px);
 }
 
-/* month popup */
+/* ===================================
+   🗓️ MONTH POPUP LIST
+   =================================== */
 .month-list {
   position: absolute;
   width: 100%;
@@ -339,4 +289,82 @@
 .month-list > div > div:hover {
   background: linear-gradient(135deg, var(--purple), var(--accent));
   color: white;
+}
+
+/* ===================================
+   💫 LOADING SKELETON SHIMMER
+   =================================== */
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: linear-gradient(
+    100deg,
+    rgba(220, 220, 220, 0.4) 10%,
+    rgba(245, 245, 245, 0.8) 20%,
+    rgba(220, 220, 220, 0.4) 30%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.15);
+  transition: background 0.4s ease, box-shadow 0.4s ease;
+}
+
+.dark .skeleton-shimmer {
+  background: linear-gradient(
+    100deg,
+    rgba(40, 40, 50, 0.6) 10%,
+    rgba(70, 70, 90, 0.9) 20%,
+    rgba(40, 40, 50, 0.6) 30%
+  );
+  box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.05);
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ===================================
+   💎 HIGHLIGHT SAVED ENTRY DATES
+   =================================== */
+
+/* Light Mode */
+.calendar-days .has-entry {
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  color: white !important;
+  font-weight: 600;
+  box-shadow: 0 0 10px rgba(96, 165, 250, 0.6);
+  transform: scale(1.05);
+  transition: all 0.25s ease-in-out;
+}
+
+/* Dark Mode */
+.dark .calendar-days .has-entry {
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  color: #eaf3ff !important;
+  font-weight: 600;
+  box-shadow: 0 0 15px rgba(37, 99, 235, 0.8);
+  transform: scale(1.05);
+}
+
+/* Pulse Animation */
+.has-entry {
+  animation: pulseEntry 1s ease-in-out;
+}
+@keyframes pulseEntry {
+  0% { transform: scale(1); box-shadow: 0 0 0 rgba(96,165,250,0); }
+  50% { transform: scale(1.08); box-shadow: 0 0 20px rgba(96,165,250,0.6); }
+  100% { transform: scale(1); box-shadow: 0 0 0 rgba(96,165,250,0); }
+}
+
+/* ===================================
+   ✨ FADE-IN TRANSITION
+   =================================== */
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
 }

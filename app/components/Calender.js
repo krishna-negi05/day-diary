@@ -10,7 +10,7 @@ export default function Calendar() {
     "July", "August", "September", "October", "November", "December"
   ];
 
-  const [entries, setEntries] = useState({});
+  const [entries, setEntries] = useState([]);
   const [selectedDateForDiary, setSelectedDateForDiary] = useState(null);
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth());
@@ -19,7 +19,7 @@ export default function Calendar() {
   const [showMonths, setShowMonths] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [quote, setQuote] = useState(""); 
+  const [quote, setQuote] = useState("");
   const [fadeIn, setFadeIn] = useState(false);
 
   const currentDate = new Date();
@@ -32,7 +32,7 @@ export default function Calendar() {
         const response = await fetch("/api/entries");
         if (!response.ok) throw new Error("Failed to fetch entries");
         const data = await response.json();
-        setEntries(data);
+        setEntries(data || []);
       } catch (err) {
         console.error("❌ Error fetching entries:", err);
         setError("Failed to load diary entries.");
@@ -40,7 +40,14 @@ export default function Calendar() {
         setLoading(false);
       }
     };
+
     fetchEntries();
+
+    // ✅ Auto-refresh when new entry added
+    if (localStorage.getItem("entryUpdated")) {
+      fetchEntries();
+      localStorage.removeItem("entryUpdated");
+    }
   }, []);
 
   // ✅ Fetch AI-generated quote from Gemini
@@ -67,7 +74,7 @@ export default function Calendar() {
     }
   }, [quote]);
 
-  // ✅ Helper for leap year
+  // ✅ Leap year helper
   const isLeapYear = (year) =>
     (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
   const getFebDays = (year) => (isLeapYear(year) ? 29 : 28);
@@ -97,7 +104,7 @@ export default function Calendar() {
   };
 
   if (selectedDateForDiary) {
-    const entry = entries[selectedDateForDiary];
+    const entry = entries.find((e) => e.date === selectedDateForDiary);
     return (
       <Diary
         selectedDate={selectedDateForDiary}
@@ -107,7 +114,7 @@ export default function Calendar() {
     );
   }
 
-  // ✅ Skeleton shimmer
+  // ✅ Skeleton shimmer card
   const SkeletonDay = () => (
     <div className="relative overflow-hidden bg-[#d1d1d1]/40 dark:bg-[#1e1e1e] rounded-md h-16 w-full skeleton-shimmer"></div>
   );
@@ -154,7 +161,9 @@ export default function Calendar() {
               if (!d) return <div key={i}></div>;
 
               const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-              const hasEntry = entries[dateKey];
+              const hasEntry = Array.isArray(entries)
+                ? entries.some((entry) => entry.date === dateKey)
+                : entries[dateKey];
               const isToday =
                 d === currentDate.getDate() &&
                 year === currentDate.getFullYear() &&
@@ -163,11 +172,12 @@ export default function Calendar() {
               return (
                 <div
                   key={i}
-                  className={`${isToday ? "curr-date" : ""} ${hasEntry ? "has-entry" : ""}`}
+                  className={`${isToday ? "curr-date" : ""} ${
+                    hasEntry ? "has-entry" : ""
+                  }`}
                   onClick={() => handleDateClick(d)}
                 >
                   {d}
-                  {hasEntry && <span className="entry-dot"></span>}
                 </div>
               );
             })}
@@ -206,24 +216,22 @@ export default function Calendar() {
       )}
 
       {/* ✨ AI-Generated Quote */}
-      {/* ✨ AI-Generated Quote */}
-<div
-  className={`mt-8 text-center tracking-normal transition-all duration-700 ${
-    darkMode ? "text-white/90" : "text-black/80"
-  } ${fadeIn ? "opacity-100" : "opacity-80"}`}
-  style={{
-    fontFamily: "'Titillium Web', sans-serif",
-    fontSize: "0.95rem",
-    letterSpacing: "0.3px",
-    lineHeight: "1.6",
-    textShadow: darkMode
-      ? "0 0 6px rgba(255,255,255,0.1)"
-      : "0 0 6px rgba(0,0,0,0.05)",
-  }}
->
-  💭 {quote}
-</div>
-
+      <div
+        className={`mt-8 text-center tracking-normal transition-all duration-700 ${
+          darkMode ? "text-white/90" : "text-black/80"
+        } ${fadeIn ? "opacity-100" : "opacity-80"}`}
+        style={{
+          fontFamily: "'Titillium Web', sans-serif",
+          fontSize: "0.95rem",
+          letterSpacing: "0.3px",
+          lineHeight: "1.6",
+          textShadow: darkMode
+            ? "0 0 6px rgba(255,255,255,0.1)"
+            : "0 0 6px rgba(0,0,0,0.05)",
+        }}
+      >
+        💭 {quote}
+      </div>
     </div>
   );
 }
