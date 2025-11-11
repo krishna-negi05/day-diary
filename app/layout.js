@@ -2,6 +2,7 @@ import "./globals.css";
 import { Outfit } from "next/font/google";
 import ResponsiveLayoutWrapper from "./components/ResponsiveLayoutWrapper";
 import { Toaster } from "react-hot-toast";
+import SiteLock from "./components/SiteLock";
 
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
@@ -22,10 +23,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${outfit.className} bg-gradient-to-br from-[#0a0a0a] to-[#1a1a1a] text-white flex min-h-screen`}
+        className={`${outfit.className} bg-gradient-to-br from-[#0a0a0a] to-[#1a1a1a] text-white min-h-screen`}
       >
-        <ResponsiveLayoutWrapper>{children}</ResponsiveLayoutWrapper>
-        <Toaster position="bottom-center" toastOptions={{ duration: 2000 }} />
+        <SiteLock>
+          <ResponsiveLayoutWrapper>{children}</ResponsiveLayoutWrapper>
+          <Toaster position="bottom-center" toastOptions={{ duration: 2000 }} />
+        </SiteLock>
       </body>
     </html>
   );

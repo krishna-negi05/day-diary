@@ -165,6 +165,13 @@ html, body, #__next {
   gap: 10px;
   margin-top: 10px;
 }
+@keyframes fade-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
 
 /* Glassy Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
